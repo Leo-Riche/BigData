@@ -12,7 +12,10 @@ paniers, promotions et commandes.
 | `data.js` | Le generateur de donnees, independant du SGBD |
 | `seed.supabase.js` | Applique le schema et insere les donnees (`pg`) |
 | `data.extra.js` | Complement ecrit a la main : 5 lignes par table |
-| `seed.extra.supabase.js` | Ajoute le complement sans vider les tables |
+| `data.volume.js` | Lot volumetrique : ~1 260 commandes sur 30 villes |
+| `data.fideles.js` | 60 clients a l'historique dense sur 12 mois |
+| `data.catalogue.js` | 15 declinaisons dormantes, actives ou retirees |
+| `seed.extra.supabase.js` | Ajoute les quatre lots sans vider les tables |
 | `schema.sql` / `seed.js` | Equivalents MySQL local, conserves pour memoire |
 | `.env.example` | Gabarit des variables de connexion, a copier en `.env` |
 
@@ -91,8 +94,50 @@ npm run seed:supabase
 npm run extra:supabase
 ```
 
-Ajoute **5 lignes par table** a une base deja remplie, sans rien vider, et
-affiche le nombre de lignes avant et apres pour chaque table.
+Ajoute quatre lots a une base deja remplie, sans rien vider, et affiche le
+nombre de lignes avant et apres pour chaque table :
+
+1. **`data.extra.js`** : 5 lignes par table, ecrites a la main.
+2. **`data.volume.js`** : environ 1 260 commandes reparties sur 30 villes. Il
+   existe parce que les analyses par ville n'ont pas de sens statistique sur
+   150 commandes : aucune ville n'y atteint les 30 commandes qu'exigent
+   certaines requetes. **Six villes restent volontairement sous ce seuil**,
+   sinon un filtre "au moins 30 commandes" ne filtrerait rien.
+3. **`data.fideles.js`** : 60 comptes a l'historique dense, de 25 commandes a 6
+   sur douze mois. Il existe parce que les deux lots precedents repartissent les
+   commandes sur beaucoup de comptes et peu de commandes chacun : le 50e client
+   d'un classement s'y retrouve a 4 commandes, a egalite avec 36 autres. Avec ce
+   lot, le 1er est a 26 commandes et le 50e a 10. Chaque fidele recoit aussi
+   quelques commandes **non encaissees**, pour qu'un filtre sur le statut ait
+   quelque chose a ecarter.
+
+4. **`data.catalogue.js`** : 15 declinaisons qui ne se vendent pas. Il existe
+   parce que les commandes tirent leurs articles uniformement dans tout le
+   catalogue : avec 6 000 lignes pour 100 declinaisons, aucune n'echappe a
+   l'echantillonnage, et une requete "jamais achetees" renvoie l'ensemble vide.
+   Le lot cree deux dimensions independantes, **active** (ligne de prix ouverte)
+   et **deja achetee** :
+
+   | | jamais achetee | deja achetee |
+   | --- | --- | --- |
+   | **active** | 10 | les 100 autres |
+   | **retiree** | 3 | 2 |
+
+   Les trois retirees invendues prouvent que le filtre "active" sert a quelque
+   chose ; les deux retirees vendues, que les deux criteres ne se recouvrent pas.
+
+Les lots generes ne touchent ni aux promotions ni aux paniers : ils reprennent
+les declinaisons existantes a leur prix courant, et ne retiennent que celles
+dont ce prix etait deja publie a la date de la commande. Les fideles sont
+rattaches aux seules villes deja au-dessus de 30 commandes, pour ne pas faire
+basculer les six petites villes au-dessus du seuil.
+
+Base complete apres les quatre lots : environ **2 430 commandes**, 328 comptes
+clients, 115 declinaisons, 24 villes a 30 commandes ou plus et 7 en dessous.
+
+Dans ce modele, **"active" ne peut vouloir dire qu'une chose** : disposer d'une
+ligne de prix ouverte dans `PriceHistory` (`endDate` NULL). Il n'existe aucun
+drapeau `isActive` sur `ProductVariant`.
 
 Ce complement vit dans `data.extra.js`, separe du generateur principal. Il est
 ecrit a la main : 5 lignes par table se lisent et se verifient directement,
