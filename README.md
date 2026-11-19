@@ -11,6 +11,8 @@ paniers, promotions et commandes.
 | `schema.supabase.sql` | Schema PostgreSQL : 14 tables, relations, contraintes |
 | `data.js` | Le generateur de donnees, independant du SGBD |
 | `seed.supabase.js` | Applique le schema et insere les donnees (`pg`) |
+| `data.extra.js` | Complement ecrit a la main : 5 lignes par table |
+| `seed.extra.supabase.js` | Ajoute le complement sans vider les tables |
 | `schema.sql` / `seed.js` | Equivalents MySQL local, conserves pour memoire |
 | `.env.example` | Gabarit des variables de connexion, a copier en `.env` |
 
@@ -82,6 +84,37 @@ Pour recharger les seules donnees, schema inchange :
 ```powershell
 npm run seed:supabase
 ```
+
+### 5. Ajouter des donnees sans effacer l'existant
+
+```powershell
+npm run extra:supabase
+```
+
+Ajoute **5 lignes par table** a une base deja remplie, sans rien vider, et
+affiche le nombre de lignes avant et apres pour chaque table.
+
+Ce complement vit dans `data.extra.js`, separe du generateur principal. Il est
+ecrit a la main : 5 lignes par table se lisent et se verifient directement,
+la ou un tirage aleatoire n'apporterait rien a cette echelle.
+
+Deux regles de construction le rendent sans danger pour les donnees en place :
+
+- toutes ses cles metier sont prefixees `ext:`, donc les UUID produits ne
+  peuvent pas entrer en collision avec ceux du jeu principal ;
+- ses lignes ne referencent que ses propres lignes, sauf les categories
+  parentes, qui existent deja. Rien ne depend de l'etat exact de la base, et
+  aucune ligne existante n'est modifiee.
+
+La commande est **rejouable** : `ON CONFLICT DO NOTHING` ignore les lignes deja
+presentes. `PromotionTarget` n'ayant ni cle primaire ni unicite, ses lignes de
+complement sont supprimees puis reinserees, ce qui evite les doublons.
+
+Le complement couvre les memes cas que le jeu principal : un client inactif,
+cinq statuts de commande differents, deux commandes invite, une promotion
+nominative, une promotion a portee produit effectivement appliquee a une
+commande qui contient ce produit, des declinaisons avec taille seule, couleur
+seule, ou les deux.
 
 ---
 
@@ -260,5 +293,3 @@ cote serveur uniquement, jamais dans du code client.
 Les comptes generes utilisent le domaine `example.com` et partagent le meme mot
 de passe, defini par `SEED_PASSWORD` dans `data.js`. Les mots de passe sont
 stockes en hash scrypt, jamais en clair.
-#   B i g D a t a  
- 

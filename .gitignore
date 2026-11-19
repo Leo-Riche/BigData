@@ -1,0 +1,6 @@
+node_modules/
+
+# Contient le mot de passe de la base : ne jamais versionner.
+.env
+.env.local
+*.crt

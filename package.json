@@ -1,0 +1,18 @@
+{
+  "name": "bdd-bigdata-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Script d'alimentation de la base e-commerce (schema drawSQL), MySQL et Supabase",
+  "main": "seed.js",
+  "scripts": {
+    "schema": "node --env-file-if-exists=.env -e \"const m=require('mysql2/promise'),fs=require('fs');(async()=>{const c=await m.createConnection({host:process.env.DB_HOST||'127.0.0.1',port:+(process.env.DB_PORT||3306),user:process.env.DB_USER||'root',password:process.env.DB_PASSWORD||'',database:process.env.DB_NAME||'shop',multipleStatements:true});await c.query(fs.readFileSync('schema.sql','utf8'));await c.end();console.log('schema.sql applique');})()\"",
+    "seed": "node --env-file-if-exists=.env seed.js",
+    "setup:supabase": "node --env-file-if-exists=.env seed.supabase.js --schema",
+    "seed:supabase": "node --env-file-if-exists=.env seed.supabase.js",
+    "extra:supabase": "node --env-file-if-exists=.env seed.extra.supabase.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.0.0",
+    "pg": "^8.0.0"
+  }
+}
