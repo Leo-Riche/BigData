@@ -9,13 +9,12 @@ paniers, promotions et commandes.
 | Fichier | Role |
 | --- | --- |
 | `schema.supabase.sql` | Schema PostgreSQL : 14 tables, relations, contraintes |
-| `data.js` | Le generateur de donnees, independant du SGBD |
-| `seed.supabase.js` | Applique le schema et insere les donnees (`pg`) |
-| `data.extra.js` | Complement ecrit a la main : 5 lignes par table |
-| `data.volume.js` | Lot volumetrique : ~1 260 commandes sur 30 villes |
-| `data.fideles.js` | 60 clients a l'historique dense sur 12 mois |
-| `data.catalogue.js` | 15 declinaisons dormantes, actives ou retirees |
-| `seed.extra.supabase.js` | Ajoute les quatre lots sans vider les tables |
+| `seed.supabase.js` | **Point d'entree unique** : applique le schema et insere les cinq lots (`pg`) |
+| `data.js` | Lot 1, le generateur principal, independant du SGBD |
+| `data.extra.js` | Lot 2, complement ecrit a la main : 5 lignes par table |
+| `data.volume.js` | Lot 3, volumetrique : ~1 260 commandes sur 30 villes |
+| `data.fideles.js` | Lot 4, 60 clients a l'historique dense sur 12 mois |
+| `data.catalogue.js` | Lot 5, 15 declinaisons dormantes, actives ou retirees |
 | `schema.sql` / `seed.js` | Equivalents MySQL local, conserves pour memoire |
 | `.env.example` | Gabarit des variables de connexion, a copier en `.env` |
 
@@ -78,25 +77,31 @@ commite pas et ne le montre pas en capture d'ecran.
 npm run setup:supabase
 ```
 
-Schema et donnees passent dans **une seule transaction** : PostgreSQL sait
-annuler du DDL, donc un echec laisse la base dans son etat precedent plutot
-qu'a moitie migree.
+Applique `schema.supabase.sql` puis insere les cinq lots, soit environ
+**2 430 commandes**. Schema et donnees passent dans **une seule transaction** :
+PostgreSQL sait annuler du DDL, donc un echec laisse la base dans son etat
+precedent plutot qu'a moitie migree.
 
-Pour recharger les seules donnees, schema inchange :
+Les trois modes du meme script :
 
-```powershell
-npm run seed:supabase
-```
+| Commande | Effet |
+| --- | --- |
+| `npm run setup:supabase` | Recree les tables, puis insere tout |
+| `npm run seed:supabase` | Vide les tables, puis reinsere tout (schema inchange) |
+| `npm run append:supabase` | Insere sans rien vider, en ignorant ce qui est deja la |
 
-### 5. Ajouter des donnees sans effacer l'existant
+`append:supabase` sert a completer une base deja remplie : les lignes
+existantes sont detectees par leur identifiant et ignorees
+(`ON CONFLICT DO NOTHING`). Le mode affiche le nombre de lignes avant et apres
+pour chaque table.
 
-```powershell
-npm run extra:supabase
-```
+### 5. Les cinq lots de donnees
 
-Ajoute quatre lots a une base deja remplie, sans rien vider, et affiche le
-nombre de lignes avant et apres pour chaque table :
+`seed.supabase.js` assemble cinq lots, dans cet ordre : le jeu principal cree
+les categories et les declinaisons auxquelles les quatre autres se rattachent.
 
+0. **`data.js`** : le generateur principal, ~1 080 lignes sur les 14 tables.
+   Il est decrit en detail plus bas.
 1. **`data.extra.js`** : 5 lignes par table, ecrites a la main.
 2. **`data.volume.js`** : environ 1 260 commandes reparties sur 30 villes. Il
    existe parce que les analyses par ville n'ont pas de sens statistique sur

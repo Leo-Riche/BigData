@@ -9,7 +9,7 @@
     "seed": "node --env-file-if-exists=.env seed.js",
     "setup:supabase": "node --env-file-if-exists=.env seed.supabase.js --schema",
     "seed:supabase": "node --env-file-if-exists=.env seed.supabase.js",
-    "extra:supabase": "node --env-file-if-exists=.env seed.extra.supabase.js"
+    "append:supabase": "node --env-file-if-exists=.env seed.supabase.js --append"
   },
   "dependencies": {
     "mysql2": "^3.0.0",
